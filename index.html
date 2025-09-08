@@ -36,16 +36,73 @@
     html { font-family: 'Nunito', system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; }
     .glass { background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02)); border: 1px solid rgba(255,255,255,.18); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); box-shadow: var(--tw-ring-offset-shadow,0 0 #0000), var(--tw-ring-shadow,0 0 #0000), 0 10px 24px rgba(2,6,23,.06); }
     .no-scrollbar::-webkit-scrollbar{display:none} .no-scrollbar{scrollbar-width:none}
+    /* safe-area cho iPhone */
+  .pb-safe{padding-bottom:max(0.75rem,env(safe-area-inset-bottom))}
+  /* hạn chế scroll bắt vào dock */
+  .pe-none{pointer-events:none}
+  .pe-auto{pointer-events:auto}
+
+  /* Dock glass nhẹ hơn để mượt máy yếu */
+  .dock-glass{
+    background:linear-gradient(180deg,rgba(255,255,255,.18),rgba(255,255,255,.08));
+    backdrop-filter:blur(12px) saturate(160%);
+    -webkit-backdrop-filter:blur(12px) saturate(160%);
+    border:1px solid rgba(255,255,255,.28);
+    box-shadow:0 8px 24px rgba(2,6,23,.22);
+  }
+  .dark .dock-glass{
+    background:linear-gradient(180deg,rgba(2,6,23,.62),rgba(2,6,23,.42));
+    border-color:rgba(255,255,255,.12)
+  }
+  .dock-item{transition:transform .12s ease, background-color .12s ease}
+  .dock-item:active{transform:scale(.98)}
+  .dock-active{
+    background:rgba(255,255,255,.14);
+    box-shadow:inset 0 0 0 2px rgba(56,189,248,.55);
+  }
+
+  /* nút tròn “search” */
+  .dock-round{
+    background:linear-gradient(180deg,rgba(255,255,255,.24),rgba(255,255,255,.1));
+    backdrop-filter:blur(12px) saturate(160%);
+    -webkit-backdrop-filter:blur(12px) saturate(160%);
+    border:1px solid rgba(255,255,255,.26);
+    box-shadow:0 8px 24px rgba(2,6,23,.28);
+  }
+  .dark .dock-round{
+    background:linear-gradient(180deg,rgba(2,6,23,.68),rgba(2,6,23,.5));
+    border-color:rgba(255,255,255,.12)
+  }
+
+  /* tôn trọng người dùng giảm motion */
+  @media (prefers-reduced-motion: reduce){
+    .dock-item{transition:none}
+  }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100">
-  <div class="min-h-screen flex">
+  <div class="min-h-[100svh] flex">
     <!-- Sidebar -->
-    <aside :class="[sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0', sidebarCollapsed ? 'md:w-20' : 'md:w-72']" class="fixed md:static inset-y-0 left-0 z-40 w-72 shrink-0 transform transition-transform duration-200 bg-white/80 dark:bg-slate-900/80 backdrop-blur border-r border-slate-200/70 dark:border-slate-800">
-      <div class="h-16 flex items-center gap-2 px-4 border-b border-slate-200/70 dark:border-slate-800">
-        <button @click="sidebarOpen=false" class="md:hidden p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800" aria-label="Đóng menu">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+    <aside
+      :class="[
+        sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
+        sidebarCollapsed ? 'md:w-20' : 'md:w-72'
+      ]"
+      class="fixed md:static inset-y-0 left-0 z-40 w-72 shrink-0 transform transition-transform duration-200
+            bg-white/80 dark:bg-slate-900/80 backdrop-blur border-r border-slate-200/70 dark:border-slate-800">
+
+      <!-- Header (relative để neo nút mép) -->
+      <div class="h-16 relative flex items-center gap-2 px-4 border-b border-slate-200/70 dark:border-slate-800">
+        <!-- Close (mobile) -->
+        <button @click="sidebarOpen=false"
+                class="md:hidden p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800"
+                aria-label="Đóng menu">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
         </button>
+
+        <!-- Logo + tên -->
         <a href="#" class="flex items-center gap-2">
           <div class="h-9 w-9 grid place-content-center rounded-xl bg-gradient-to-br from-brand-500 to-emerald-600 text-white font-extrabold">B</div>
           <div class="leading-tight" x-show="!sidebarCollapsed">
@@ -53,29 +110,57 @@
             <div class="text-xs text-slate-500 dark:text-slate-400">Admin Panel</div>
           </div>
         </a>
+
+        <!-- Nút mũi tên thu gọn/mở rộng (desktop only), dán mép phải -->
+        <button
+          type="button"
+          @click="sidebarCollapsed = !sidebarCollapsed"
+          :aria-label="sidebarCollapsed ? (lang==='vi' ? 'Mở rộng sidebar' : 'Expand sidebar')
+                                        : (lang==='vi' ? 'Thu gọn sidebar' : 'Collapse sidebar')"
+          class="hidden md:flex items-center justify-center
+                h-5 w-5 rounded-full
+                absolute top-1/2 right-[-0.75rem] -translate-y-1/2
+                bg-brand-600 text-white
+                ring-4 ring-brand-600/20 shadow-lg shadow-brand-600/20
+                hover:ring-brand-600/30 hover:shadow-xl hover:shadow-brand-600/30
+                transition-all duration-200 z-50">
+
+          <!-- đang mở -> mũi tên trái (thu gọn) -->
+          <svg x-show="!sidebarCollapsed" x-transition.opacity
+              xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M15 18l-6-6 6-6"/>
+          </svg>
+
+          <!-- đang thu gọn -> mũi tên phải (mở rộng) -->
+          <svg x-show="sidebarCollapsed" x-transition.opacity
+              xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 6l6 6-6 6"/>
+          </svg>
+        </button>
       </div>
+
+      <!-- NAV -->
       <nav class="p-3 overflow-y-auto h-[calc(100vh-4rem)] space-y-1">
         <template x-for="item in nav" :key="item.vi">
-          <a :href="item.href" :class="[navClass(item), sidebarCollapsed ? 'justify-center' : '']" class="flex items-center gap-3 px-3 py-2 rounded-xl text-sm">
+          <a :href="item.href"
+            :class="[navClass(item), sidebarCollapsed ? 'justify-center' : '']"
+            class="flex items-center gap-3 px-3 py-2 rounded-xl text-sm">
             <span x-html="item.icon"></span>
             <span x-show="!sidebarCollapsed" x-text="lang==='vi' ? item.vi : item.en"></span>
-            <span x-show="!sidebarCollapsed && item.badge" x-text="item.badge" class="ml-auto text-xs px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800"></span>
+            <span x-show="!sidebarCollapsed && item.badge"
+                  x-text="item.badge"
+                  class="ml-auto text-xs px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800"></span>
           </a>
         </template>
-        
       </nav>
     </aside>
-
     <!-- Content area -->
     <div class="flex-1 min-w-0">
       <!-- Topbar -->
       <header class="sticky top-0 z-30 bg-white/70 dark:bg-slate-900/70 backdrop-blur border-b border-slate-200/70 dark:border-slate-800">
         <div class="h-16 px-4 flex items-center gap-3">
-
-          <!-- Mobile menu -->
-          <button @click="sidebarOpen=true" class="md:hidden p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800" aria-label="Mở menu">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
-          </button>
 
           <!-- Breadcrumb -->
           <nav aria-label="Breadcrumb" class="hidden sm:block">
@@ -85,6 +170,50 @@
               <li class="text-slate-800 dark:text-slate-200 font-medium" x-text="pageTitle"></li>
             </ol>
           </nav>
+          <!-- Theme toggle (mobile) -->
+          <button
+            type="button"
+            @click="toggleDark()"
+            :title="dark ? (lang==='vi'?'Chế độ sáng':'Light mode') : (lang==='vi'?'Chế độ tối':'Dark mode')"
+            aria-label="Đổi chế độ sáng/tối"
+            class="md:hidden h-10 w-10 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 grid place-content-center">
+            
+            <!-- Sun (Light) -->
+            <template x-if="!dark">
+              <svg xmlns="http://www.w3.org/2000/svg"
+                  class="h-5 w-5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round">
+                <circle cx="12" cy="12" r="4"/>
+                <path d="M12 2v2"/>
+                <path d="M12 20v2"/>
+                <path d="M2 12h2"/>
+                <path d="M20 12h2"/>
+                <path d="m4.93 4.93 1.41 1.41"/>
+                <path d="m17.66 17.66 1.41 1.41"/>
+                <path d="m6.34 17.66-1.41 1.41"/>
+                <path d="m19.07 4.93-1.41 1.41"/>
+              </svg>
+            </template>
+
+            <!-- Moon (Dark) -->
+            <template x-if="dark">
+              <svg xmlns="http://www.w3.org/2000/svg"
+                  class="h-5 w-5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+              </svg>
+            </template>
+          </button>
 
           <!-- Search -->
           <div class="ml-auto flex-1 max-w-md sm:max-w-lg">
@@ -97,6 +226,8 @@
                     class="w-full pl-10 pr-3 h-10 rounded-xl bg-slate-100/70 dark:bg-slate-800/70 border border-slate-200/70 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500" />
             </label>
           </div>
+
+          
 
           <!-- Header tools: collapse, theme, language -->
           <div class="hidden md:flex items-center gap-2 ml-2">
@@ -198,24 +329,12 @@
               </form>
             </div>
           </div>
-          <!-- Collapse sidebar (desktop) -->
-            <button @click="sidebarCollapsed = !sidebarCollapsed"
-                    :title="sidebarCollapsed ? (lang==='vi'?'Mở rộng':'Expand') : (lang==='vi'?'Thu gọn':'Collapse')"
-                    class="h-10 w-10 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 grid place-content-center">
-              <template x-if="!sidebarCollapsed">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6h18M3 12h12M3 18h18"/></svg>
-              </template>
-              <template x-if="sidebarCollapsed">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h10M4 12h18M4 18h10"/></svg>
-              </template>
-            </button>
-
         </div>
       </header>
 
 
       <!-- Main -->
-      <main class="p-4 md:p-6 space-y-6">
+      <main class="p-4 md:p-6 pb-28 md:pb-6 space-y-6">
         <!-- KPIs -->
         <section class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
           <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 shadow-subtle">
@@ -260,36 +379,69 @@
           </div>
         </section>
 
-        <!-- Tabs: Listings / Projects / Blog / Contacts -->
+        <!-- Tabs: Listings / Projects / Blog / Contacts (Mobile-first, full) -->
         <section class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-subtle">
+          <!-- Tablist: scrollable on mobile -->
           <div class="px-4 pt-4">
-            <div class="inline-flex rounded-xl border border-slate-200 dark:border-slate-800 p-1 bg-slate-50/60 dark:bg-slate-900/40" role="tablist">
-            <template x-for="t in tabs" :key="t.id">
-              <button type="button"
-                      @click="activeTab = t.id"
-                      :aria-selected="activeTab === t.id"
-                      :class="tabClass(t.id)"
-                      class="px-3 py-1.5 rounded-lg text-sm">
-                <span x-text="lang === 'vi' ? t.vi : t.en"></span>
-              </button>
-            </template>
+            <div
+              class="flex gap-1 overflow-x-auto no-scrollbar px-4 py-1 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40"
+              role="tablist">
+              <template x-for="t in tabs" :key="t.id">
+                <button
+                  type="button"
+                  @click="activeTab = t.id"
+                  :aria-selected="activeTab === t.id"
+                  :class="tabClass(t.id)"
+                  class="shrink-0 rounded-lg text-xs sm:text-sm px-2 py-1 sm:px-3 sm:py-1.5">
+                  <span x-text="lang === 'vi' ? t.vi : t.en"></span>
+                </button>
+              </template>
+            </div>
           </div>
 
-          </div>
-          <!-- USERS table -->
+          <!-- USERS -->
           <div x-show="activeTab==='users'" class="p-4" x-cloak>
             <div class="flex items-center gap-2 mb-3">
-              <h2 class="font-semibold text-lg" x-text="lang==='vi' ? 'Người dùng' : 'Users'"></h2>
-              <span class="text-xs ml-2 px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800"
+              <h2 class="font-semibold text-base sm:text-lg" x-text="lang==='vi' ? 'Người dùng' : 'Users'"></h2>
+              <span class="text-[11px] sm:text-xs ml-2 px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800"
                     x-text="`${users.length} ${lang==='vi' ? 'tài khoản' : 'users'}`"></span>
-              <div class="ml-auto flex items-center gap-2">
+              <div class="ml-auto">
                 <button class="h-9 px-3 rounded-xl bg-brand-600 text-white hover:bg-brand-700 text-sm">
                   <span x-text="lang==='vi' ? '+ Thêm người dùng' : '+ Add user'"></span>
                 </button>
               </div>
             </div>
 
-            <div class="overflow-x-auto">
+            <!-- Mobile cards -->
+            <div class="grid gap-3 sm:hidden">
+              <template x-for="u in users" :key="u.id">
+                <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3">
+                  <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                      <div class="font-semibold truncate" x-text="u.name"></div>
+                      <div class="text-xs text-slate-500 break-all" x-text="u.email"></div>
+                    </div>
+                    <span class="px-2 py-0.5 rounded-lg text-[11px] bg-slate-100 dark:bg-slate-800" x-text="u.role"></span>
+                  </div>
+                  <div class="mt-2 flex items-center gap-2">
+                    <span :class="userStatusClass(u.status)"
+                          class="px-2 py-0.5 rounded-lg text-[11px] font-medium"
+                          x-text="u.status"></span>
+                    <div class="ml-auto inline-flex gap-1">
+                      <button class="h-8 w-8 grid place-content-center rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700" title="Sửa">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.862 3.487a2.1 2.1 0 0 1 2.97 2.97L8.478 17.81l-4.03.503.503-4.03L16.862 3.487Z"/></svg>
+                      </button>
+                      <button class="h-8 w-8 grid place-content-center rounded-lg bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/40" title="Xóa">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0 1 16.138 21H7.862a2 2 0 0 1-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m-7 0a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m-6 0h6"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </template>
+            </div>
+
+            <!-- Desktop table -->
+            <div class="overflow-x-auto hidden sm:block">
               <table class="min-w-full text-sm">
                 <thead class="text-left text-slate-500 dark:text-slate-400 border-y border-slate-200 dark:border-slate-800">
                   <tr>
@@ -316,10 +468,10 @@
                       <td class="py-3 px-4 text-right">
                         <div class="inline-flex gap-1">
                           <button class="px-2.5 h-8 grid place-content-center rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700" title="Sửa">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.862 3.487a2.1 2.1 0 0 1 2.97 2.97L8.478 17.81l-4.03.503.503-4.03L16.862 3.487Z"/></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.862 3.487a2.1 2.1 0 0 1 2.97 2.97L8.478 17.81l-4.03.503.503-4.03L16.862 3.487Z"/></svg>
                           </button>
                           <button class="px-2.5 h-8 grid place-content-center rounded-lg bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/40" title="Xóa">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0 1 16.138 21H7.862a2 2 0 0 1-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m-7 0a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m-6 0h6"/></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0 1 16.138 21H7.862a2 2 0 0 1-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m-7 0a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m-6 0h6"/></svg>
                           </button>
                         </div>
                       </td>
@@ -330,17 +482,81 @@
             </div>
           </div>
 
-          <!-- LISTINGS table -->
+          <!-- LISTINGS -->
           <div x-show="activeTab==='listings'" class="p-4">
             <div class="flex items-center gap-2 mb-3">
-              <h2 class="font-semibold text-lg">Tin đăng gần đây</h2>
-              <span class="text-xs ml-2 px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800" x-text="`${listings.length} bản ghi`"></span>
+              <h2 class="font-semibold text-base sm:text-lg">Tin đăng</h2>
+              <span class="text-[11px] sm:text-xs ml-2 px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800"
+                    x-text="`${listings.length} bản ghi`"></span>
               <div class="ml-auto flex items-center gap-2">
-                <button class="h-9 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-sm" @click="openFilter=true">Bộ lọc</button>
-                <button class="h-9 px-3 rounded-xl bg-brand-600 text-white hover:bg-brand-700 text-sm" @click="openCreate=true">+ Tạo tin</button>
+                <!-- Bộ lọc -->
+                <button
+                  type="button"
+                  @click="openFilter=true"
+                  aria-label="Bộ lọc"
+                  class="h-9 px-2 sm:px-3 rounded-xl border border-slate-200 dark:border-slate-700
+                        bg-white/70 dark:bg-slate-900/70 hover:bg-slate-100 dark:hover:bg-slate-800
+                        flex items-center gap-2">
+                  <!-- icon Funnel -->
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24"
+                      fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="22 3 2 3 10 12 10 19 14 21 14 12 22 3"></polygon>
+                  </svg>
+                  <span class="text-sm hidden sm:inline">Bộ lọc</span>
+                </button>
+
+                <!-- + Tạo tin -->
+                <button
+                  type="button"
+                  @click="openCreate=true"
+                  aria-label="Tạo tin"
+                  class="h-9 px-3 rounded-xl bg-brand-600 text-white hover:bg-brand-700
+                        flex items-center gap-2 shadow-subtle">
+                  <!-- icon Plus -->
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24"
+                      fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                  <span class="text-sm hidden sm:inline">Tạo tin</span>
+                  <span class="text-sm sm:hidden">Tạo</span>
+                </button>
               </div>
             </div>
-            <div class="overflow-x-auto">
+
+            <!-- Mobile cards -->
+            <div class="grid gap-3 sm:hidden">
+              <template x-for="o in listings" :key="o.code">
+                <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3">
+                  <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                      <div class="text-[13px] font-semibold line-clamp-2" x-text="o.title"></div>
+                      <div class="text-[11px] text-slate-500 mt-0.5" x-text="o.type + ' • ' + o.area"></div>
+                    </div>
+                    <span :class="statusClass(o.status)" class="px-2 py-0.5 rounded-lg text-[11px] font-medium" x-text="o.status"></span>
+                  </div>
+                  <div class="mt-2 grid grid-cols-2 gap-2 text-[12px]">
+                    <div><span class="text-slate-500">Diện tích:</span> <span class="font-medium" x-text="o.size"></span></div>
+                    <div class="text-right"><span class="text-slate-500">Ngày:</span> <span class="font-medium" x-text="o.date"></span></div>
+                    <div class="col-span-2"><span class="text-slate-500">Giá:</span> <span class="font-semibold" x-text="o.price"></span></div>
+                  </div>
+                  <div class="mt-2 flex items-center gap-1">
+                    <a href="#" class="h-8 w-8 grid place-content-center rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700" title="Xem">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7Z"/></svg>
+                    </a>
+                    <a href="#" class="h-8 w-8 grid place-content-center rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700" title="Sửa">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.862 3.487a2.1 2.1 0 0 1 2.97 2.97L8.478 17.81l-4.03.503.503-4.03L16.862 3.487Z"/></svg>
+                    </a>
+                    <button class="h-8 w-8 grid place-content-center rounded-lg bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/40 ml-auto" title="Xóa">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0 1 16.138 21H7.862a2 2 0 0 1-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m-7 0a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m-6 0h6"/></svg>
+                    </button>
+                  </div>
+                </div>
+              </template>
+            </div>
+
+            <!-- Desktop table -->
+            <div class="overflow-x-auto hidden sm:block">
               <table class="min-w-full text-sm">
                 <thead class="text-left text-slate-500 dark:text-slate-400 border-y border-slate-200 dark:border-slate-800">
                   <tr>
@@ -370,13 +586,13 @@
                       <td class="py-3 px-4 text-right">
                         <div class="inline-flex gap-1">
                           <a href="#" class="px-2.5 h-8 grid place-content-center rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700" title="Xem">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7Z"/></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7Z"/></svg>
                           </a>
                           <a href="#" class="px-2.5 h-8 grid place-content-center rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700" title="Sửa">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.862 3.487a2.1 2.1 0 0 1 2.97 2.97L8.478 17.81l-4.03.503.503-4.03L16.862 3.487Z"/></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.862 3.487a2.1 2.1 0 0 1 2.97 2.97L8.478 17.81l-4.03.503.503-4.03L16.862 3.487Z"/></svg>
                           </a>
                           <button class="px-2.5 h-8 grid place-content-center rounded-lg bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/40" title="Xóa">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0 1 16.138 21H7.862a2 2 0 0 1-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m-7 0a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m-6 0h6"/></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0 1 16.138 21H7.862a2 2 0 0 1-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m-7 0a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m-6 0h6"/></svg>
                           </button>
                         </div>
                       </td>
@@ -384,38 +600,55 @@
                   </template>
                 </tbody>
               </table>
-            </div>
-            <!-- Pagination demo -->
-            <div class="p-4 flex items-center justify-between text-sm">
-              <div>Hiển thị <span class="font-medium">1–10</span> trên <span class="font-medium" x-text="listings.length"></span></div>
-              <div class="flex items-center gap-1">
-                <button class="h-9 w-9 rounded-lg bg-slate-100 dark:bg-slate-800 grid place-content-center">‹</button>
-                <button class="h-9 w-9 rounded-lg bg-brand-600 text-white grid place-content-center">1</button>
-                <button class="h-9 w-9 rounded-lg bg-slate-100 dark:bg-slate-800 grid place-content-center">2</button>
-                <button class="h-9 w-9 rounded-lg bg-slate-100 dark:bg-slate-800 grid place-content-center">›</button>
+
+              <!-- Pagination demo (desktop only) -->
+              <div class="p-4 flex items-center justify-between text-sm">
+                <div>Hiển thị <span class="font-medium">1–10</span> trên <span class="font-medium" x-text="listings.length"></span></div>
+                <div class="flex items-center gap-1">
+                  <button class="h-9 w-9 rounded-lg bg-slate-100 dark:bg-slate-800 grid place-content-center">‹</button>
+                  <button class="h-9 w-9 rounded-lg bg-brand-600 text-white grid place-content-center">1</button>
+                  <button class="h-9 w-9 rounded-lg bg-slate-100 dark:bg-slate-800 grid place-content-center">2</button>
+                  <button class="h-9 w-9 rounded-lg bg-slate-100 dark:bg-slate-800 grid place-content-center">›</button>
+                </div>
               </div>
             </div>
           </div>
 
-          <!-- PROJECTS grid -->
+          <!-- PROJECTS -->
           <div x-show="activeTab==='projects'" class="p-4">
             <div class="flex items-center gap-2 mb-3">
-              <h2 class="font-semibold text-lg">Dự án</h2>
-              <span class="text-xs ml-2 px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800" x-text="`${projects.length} dự án`"></span>
-              <div class="ml-auto flex items-center gap-2">
-                <button class="h-9 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-sm" @click="openProject=true">+ Thêm dự án</button>
+              <h2 class="font-semibold text-base sm:text-lg">Dự án</h2>
+              <span class="text-[11px] sm:text-xs ml-2 px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800"
+                    x-text="`${projects.length} dự án`"></span>
+              <div class="ml-auto">
+               <button
+                  type="button"
+                  @click="openProject=true"
+                  aria-label="Tạo dự án"
+                  class="h-9 px-3 rounded-xl bg-brand-600 text-white hover:bg-brand-700
+                        flex items-center gap-2 shadow-subtle">
+                  <!-- icon Plus -->
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24"
+                      fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                  <span class="text-sm hidden sm:inline">Tạo dự án</span>
+                  <span class="text-sm sm:hidden">Tạo</span>
+                </button>
               </div>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
               <template x-for="p in projects" :key="p.slug">
                 <div class="rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden bg-white dark:bg-slate-900">
                   <img :src="p.cover" alt="" class="h-40 w-full object-cover">
-                  <div class="p-4">
-                    <div class="font-semibold" x-text="p.name"></div>
-                    <div class="text-sm text-slate-500" x-text="p.location"></div>
+                  <div class="p-3 sm:p-4">
+                    <div class="font-semibold text-[15px] sm:text-base" x-text="p.name"></div>
+                    <div class="text-[12px] sm:text-sm text-slate-500" x-text="p.location"></div>
                     <div class="mt-3 flex items-center justify-between">
-                      <span class="text-sm px-2 py-0.5 rounded-lg bg-brand-100 text-brand-700" x-text="p.type"></span>
-                      <button class="text-sm px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">Chi tiết</button>
+                      <span class="text-[12px] px-2 py-0.5 rounded-lg bg-brand-100 text-brand-700" x-text="p.type"></span>
+                      <button class="text-[12px] px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">Chi tiết</button>
                     </div>
                   </div>
                 </div>
@@ -423,16 +656,58 @@
             </div>
           </div>
 
-          <!-- BLOG table -->
+          <!-- BLOG -->
           <div x-show="activeTab==='blog'" class="p-4">
             <div class="flex items-center gap-2 mb-3">
-              <h2 class="font-semibold text-lg">Bài viết</h2>
-              <span class="text-xs ml-2 px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800" x-text="`${posts.length} bài`"></span>
-              <div class="ml-auto flex items-center gap-2">
-                <button class="h-9 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-sm" @click="openPost=true">+ Bài viết</button>
+              <h2 class="font-semibold text-base sm:text-lg">Bài viết</h2>
+              <span class="text-[11px] sm:text-xs ml-2 px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800" x-text="`${posts.length} bài`"></span>
+              <div class="ml-auto">
+                <button
+                  type="button"
+                  @click="openPost=true"
+                  aria-label="Tạo bài viết"
+                  class="h-9 px-3 rounded-xl bg-brand-600 text-white hover:bg-brand-700
+                        flex items-center gap-2 shadow-subtle">
+                  <!-- icon Plus -->
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24"
+                      fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                  <span class="text-sm hidden sm:inline">Tạo bài viết</span>
+                  <span class="text-sm sm:hidden">Tạo</span>
+                </button>
               </div>
             </div>
-            <div class="overflow-x-auto">
+
+            <!-- Mobile cards -->
+            <div class="grid gap-3 sm:hidden">
+              <template x-for="b in posts" :key="b.slug">
+                <div class="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3">
+                  <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                      <div class="font-semibold text-[13px] line-clamp-2" x-text="b.title"></div>
+                      <div class="text-[11px] text-slate-500" x-text="b.category"></div>
+                    </div>
+                    <span :class="statusClass(b.status)" class="px-2 py-0.5 rounded-lg text-[11px] font-medium" x-text="b.status"></span>
+                  </div>
+                  <div class="mt-2 flex items-center justify-between text-[12px]">
+                    <span class="text-slate-500">Ngày: <span class="font-medium" x-text="b.date"></span></span>
+                    <div class="inline-flex gap-1">
+                      <a href="#" class="h-8 w-8 grid place-content-center rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700" title="Sửa">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.862 3.487a2.1 2.1 0 0 1 2.97 2.97L8.478 17.81l-4.03.503.503-4.03L16.862 3.487Z"/></svg>
+                      </a>
+                      <button class="h-8 w-8 grid place-content-center rounded-lg bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/40" title="Xóa">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0 1 16.138 21H7.862a2 2 0 0 1-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m-7 0a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m-6 0h6"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </template>
+            </div>
+
+            <!-- Desktop table -->
+            <div class="overflow-x-auto hidden sm:block">
               <table class="min-w-full text-sm">
                 <thead class="text-left text-slate-500 dark:text-slate-400 border-y border-slate-200 dark:border-slate-800">
                   <tr>
@@ -453,10 +728,10 @@
                       <td class="py-3 px-4 text-right">
                         <div class="inline-flex gap-1">
                           <a href="#" class="px-2.5 h-8 grid place-content-center rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700" title="Sửa">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.862 3.487a2.1 2.1 0 0 1 2.97 2.97L8.478 17.81l-4.03.503.503-4.03L16.862 3.487Z"/></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.862 3.487a2.1 2.1 0 0 1 2.97 2.97L8.478 17.81l-4.03.503.503-4.03L16.862 3.487Z"/></svg>
                           </a>
                           <button class="px-2.5 h-8 grid place-content-center rounded-lg bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/40" title="Xóa">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0 1 16.138 21H7.862a2 2 0 0 1-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m-7 0a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m-6 0h6"/></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0 1 16.138 21H7.862a2 2 0 0 1-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m-7 0a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m-6 0h6"/></svg>
                           </button>
                         </div>
                       </td>
@@ -467,20 +742,22 @@
             </div>
           </div>
 
-          <!-- CONTACTS simple list -->
+          <!-- CONTACTS (cards – đã mobile-friendly) -->
           <div x-show="activeTab==='contacts'" class="p-4">
             <div class="flex items-center gap-2 mb-3">
-              <h2 class="font-semibold text-lg">Liên hệ khách hàng</h2>
-              <span class="text-xs ml-2 px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800" x-text="`${contacts.length} liên hệ`"></span>
+              <h2 class="font-semibold text-base sm:text-lg">Liên hệ khách hàng</h2>
+              <span class="text-[11px] sm:text-xs ml-2 px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800" x-text="`${contacts.length} liên hệ`"></span>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
               <template x-for="c in contacts" :key="c.id">
                 <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
                   <div class="font-semibold" x-text="c.name"></div>
                   <div class="text-sm text-slate-500" x-text="c.phone"></div>
                   <div class="text-sm text-slate-500" x-text="c.note"></div>
                   <div class="mt-3 flex items-center gap-2">
-                    <span class="text-xs px-2 py-0.5 rounded-lg" :class="c.status==='Mới' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'" x-text="c.status"></span>
+                    <span class="text-xs px-2 py-0.5 rounded-lg"
+                          :class="c.status==='Mới' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'"
+                          x-text="c.status"></span>
                     <button class="ml-auto text-sm px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">Gọi lại</button>
                   </div>
                 </div>
@@ -488,6 +765,7 @@
             </div>
           </div>
         </section>
+
 
         <!-- Quick create form (Listing) + Stat card -->
         <section class="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -643,6 +921,7 @@
     <div class="fixed bottom-4 right-4 z-50 px-4 py-3 rounded-xl bg-slate-900 text-white shadow-soft"><div class="text-sm" x-text="toast"></div></div>
   </template>
 
+
   <!-- Alpine State -->
   <script>
     function adminApp(){
@@ -671,6 +950,9 @@
         toast: '',
         pageTitle: 'Dashboard',
         activeTab: 'listings',
+        dockActive: 'today',
+        isKeyboardOpen: false,
+        mobileActive: 'overview',
         tabs: [
           { id: 'users', vi: 'Người dùng', en: 'Users' },
           { id: 'listings', vi: 'Tin đăng', en: 'Listings' },
@@ -716,11 +998,22 @@
         init(){
           const bal = localStorage.getItem('bds_wallet_balance');
           if (bal) this.wallet.balance = Number(bal);
-
+          // Ẩn dock khi bàn phím mở (iOS/Android)
+          if (window.visualViewport) {
+            const handler = () => {
+              const vv = window.visualViewport;
+              // chênh lệch lớn ~150px coi như bàn phím mở
+              this.isKeyboardOpen = (window.innerHeight - vv.height) > 150;
+            };
+            window.visualViewport.addEventListener('resize', handler);
+            window.visualViewport.addEventListener('scroll', handler);
+            handler();
+          }
           const savedDark = localStorage.getItem('bds_dark');
           this.dark = savedDark ? JSON.parse(savedDark) : window.matchMedia('(prefers-color-scheme: dark)').matches;
           const savedLang = localStorage.getItem('bds_lang');
           this.lang = savedLang || 'vi';
+
         },
         formatVND(n){ if(n==null) return '₫0'; const v = Number.isFinite(n) ? n : Number(n||0); return v.toLocaleString('vi-VN',{ style:'currency', currency:'VND', maximumFractionDigits:0 }); },
         doTopup(){
@@ -760,5 +1053,102 @@
       }
     }
   </script>
+    <!-- Mobile Glass Dock -->
+  <nav class="fixed inset-x-0 bottom-0 z-50 md:hidden pb-safe px-3 pe-none"
+      x-show="!isKeyboardOpen"
+      x-transition.opacity>
+    <div class="mx-auto max-w-[720px] flex items-end justify-between gap-3">
+
+      <!-- Pill (4 tabs) -->
+      <div class="dock-glass pe-auto w-full rounded-[26px] px-2 py-1.5">
+        <div class="grid grid-cols-4">
+          <!-- Hôm nay -->
+          <button
+            @click="dockActive='today'; pageTitle='Dashboard'; window.scrollTo({top:0,behavior:'smooth'})"
+            :class="dockActive==='today' ? 'dock-active text-sky-600 dark:text-sky-300' : 'hover:bg-white/5'"
+            class="dock-item mx-1 my-0.5 rounded-2xl flex flex-col items-center gap-1 py-2">
+            <svg xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true">
+              <rect x="3"  y="3"  width="8" height="8" rx="2" ry="2"></rect>
+              <rect x="13" y="3"  width="8" height="8" rx="2" ry="2"></rect>
+              <rect x="3"  y="13" width="8" height="8" rx="2" ry="2"></rect>
+              <rect x="13" y="13" width="8" height="8" rx="2" ry="2"></rect>
+            </svg>
+            <span class="hidden [@media(min-width:360px)]:inline text-[10px] leading-none font-semibold">Tổng quan</span>
+          </button>
+
+          <!-- Khách hàng -->
+          <button
+            @click="dockActive='customers'; activeTab='contacts'; pageTitle='Contacts'"
+            :class="dockActive==='customers' ? 'dock-active text-sky-600 dark:text-sky-300' : 'hover:bg-white/5'"
+            class="dock-item mx-1 my-0.5 rounded-2xl flex flex-col items-center gap-1 py-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+            </svg>
+            <span class="text-[10px] leading-none font-semibold">Khách hàng</span>
+          </button>
+
+          <!-- Tin đăng -->
+          <button
+            @click="dockActive='listings'; activeTab='listings'; pageTitle='Listings'"
+            :class="dockActive==='listings' ? 'dock-active text-sky-600 dark:text-sky-300' : 'hover:bg-white/5'"
+            class="dock-item mx-1 my-0.5 rounded-2xl flex flex-col items-center gap-1 py-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 3l9 5-9 5-9-5 9-5z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l9 5 9-5"/>
+            </svg>
+            <span class="text-[10px] leading-none font-semibold">Tin đăng</span>
+          </button>
+
+          <!-- Bài viết -->
+          <button
+            @click="dockActive='blog'; activeTab='blog'; pageTitle='Posts'"
+            :class="dockActive==='blog' ? 'dock-active text-sky-600 dark:text-sky-300' : 'hover:bg-white/5'"
+            class="dock-item mx-1 my-0.5 rounded-2xl flex flex-col items-center gap-1 py-2">
+            <svg xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true">
+              <path d="M19 20H6a2 2 0 0 1-2-2V6" />
+              <path d="M22 8v10a2 2 0 0 1-2 2H6" />
+              <path d="M16 12H8" />
+              <path d="M16 8H8" />
+              <path d="M10 16H8" />
+            </svg>
+            <span class="text-[10px] leading-none font-semibold">Bài viết</span>
+          </button>
+        </div>
+      </div>
+
+     <!-- Nút tròn (Thêm tin nhanh) -->
+    <button
+      type="button"
+      @click="openCreate=true"
+      class="dock-round pointer-events-auto h-14 w-14 rounded-full grid place-content-center bg-brand-600 hover:bg-brand-700 text-white shadow-soft active:scale-95 transition mb-2"
+      title="Thêm tin nhanh"
+      aria-label="Thêm tin nhanh">
+      <!-- Icon dấu cộng -->
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 5v14M5 12h14"/>
+      </svg>
+    </button>
+
+
+    </div>
+  </nav>
 </body>
 </html>
