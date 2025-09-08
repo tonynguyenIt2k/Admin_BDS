@@ -1,0 +1,764 @@
+<!-- resources/views/admin/index.blade.php -->
+<!DOCTYPE html>
+<html lang="vi" x-data="adminApp()" x-init="init()" :class="{ 'dark': dark }">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BĐS Modern — Admin</title>
+  <meta name="description" content="Bảng điều khiển quản trị BĐS" />
+
+  <!-- TailwindCSS (có thể thay bằng @vite trong Laravel) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#effef8', 100: '#d8fbef', 200: '#b5f6e2', 300: '#86ecd0', 400: '#4ad8b6', 500: '#1dbb98',
+              600: '#109c7e', 700: '#0d7d66', 800: '#0f6352', 900: '#0e5245'
+            }
+          },
+          boxShadow: {
+            soft: '0 8px 28px rgba(2, 6, 23, 0.10)',
+            subtle: '0 1px 0 rgba(255,255,255,.15) inset'
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Alpine.js -->
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    html { font-family: 'Nunito', system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; }
+    .glass { background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02)); border: 1px solid rgba(255,255,255,.18); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); box-shadow: var(--tw-ring-offset-shadow,0 0 #0000), var(--tw-ring-shadow,0 0 #0000), 0 10px 24px rgba(2,6,23,.06); }
+    .no-scrollbar::-webkit-scrollbar{display:none} .no-scrollbar{scrollbar-width:none}
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100">
+  <div class="min-h-screen flex">
+    <!-- Sidebar -->
+    <aside :class="[sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0', sidebarCollapsed ? 'md:w-20' : 'md:w-72']" class="fixed md:static inset-y-0 left-0 z-40 w-72 shrink-0 transform transition-transform duration-200 bg-white/80 dark:bg-slate-900/80 backdrop-blur border-r border-slate-200/70 dark:border-slate-800">
+      <div class="h-16 flex items-center gap-2 px-4 border-b border-slate-200/70 dark:border-slate-800">
+        <button @click="sidebarOpen=false" class="md:hidden p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800" aria-label="Đóng menu">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+        <a href="#" class="flex items-center gap-2">
+          <div class="h-9 w-9 grid place-content-center rounded-xl bg-gradient-to-br from-brand-500 to-emerald-600 text-white font-extrabold">B</div>
+          <div class="leading-tight" x-show="!sidebarCollapsed">
+            <div class="font-semibold">BĐS Modern</div>
+            <div class="text-xs text-slate-500 dark:text-slate-400">Admin Panel</div>
+          </div>
+        </a>
+      </div>
+      <nav class="p-3 overflow-y-auto h-[calc(100vh-4rem)] space-y-1">
+        <template x-for="item in nav" :key="item.vi">
+          <a :href="item.href" :class="[navClass(item), sidebarCollapsed ? 'justify-center' : '']" class="flex items-center gap-3 px-3 py-2 rounded-xl text-sm">
+            <span x-html="item.icon"></span>
+            <span x-show="!sidebarCollapsed" x-text="lang==='vi' ? item.vi : item.en"></span>
+            <span x-show="!sidebarCollapsed && item.badge" x-text="item.badge" class="ml-auto text-xs px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800"></span>
+          </a>
+        </template>
+        
+      </nav>
+    </aside>
+
+    <!-- Content area -->
+    <div class="flex-1 min-w-0">
+      <!-- Topbar -->
+      <header class="sticky top-0 z-30 bg-white/70 dark:bg-slate-900/70 backdrop-blur border-b border-slate-200/70 dark:border-slate-800">
+        <div class="h-16 px-4 flex items-center gap-3">
+
+          <!-- Mobile menu -->
+          <button @click="sidebarOpen=true" class="md:hidden p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800" aria-label="Mở menu">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+          </button>
+
+          <!-- Breadcrumb -->
+          <nav aria-label="Breadcrumb" class="hidden sm:block">
+            <ol class="flex items-center gap-1 text-sm text-slate-500 dark:text-slate-400">
+              <li><a href="#" class="hover:text-slate-800 dark:hover:text-slate-200" x-text="lang==='vi' ? 'Trang chủ' : 'Home'"></a></li>
+              <li>/</li>
+              <li class="text-slate-800 dark:text-slate-200 font-medium" x-text="pageTitle"></li>
+            </ol>
+          </nav>
+
+          <!-- Search -->
+          <div class="ml-auto flex-1 max-w-md sm:max-w-lg">
+            <label class="relative block">
+              <span class="absolute inset-y-0 left-3 grid place-content-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m21 21-4.3-4.3M11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14Z"/></svg>
+              </span>
+              <input type="search"
+                    :placeholder="lang==='vi' ? 'Tìm nhanh...' : 'Quick search...'"
+                    class="w-full pl-10 pr-3 h-10 rounded-xl bg-slate-100/70 dark:bg-slate-800/70 border border-slate-200/70 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500" />
+            </label>
+          </div>
+
+          <!-- Header tools: collapse, theme, language -->
+          <div class="hidden md:flex items-center gap-2 ml-2">
+            
+
+            <!-- Theme toggle -->
+            <button @click="toggleDark()"
+                    :title="dark ? (lang==='vi'?'Chế độ sáng':'Light mode') : (lang==='vi'?'Chế độ tối':'Dark mode')"
+                    class="h-10 w-10 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 grid place-content-center">
+              <!-- Sun (Light) -->
+              <template x-if="!dark">
+                <svg xmlns="http://www.w3.org/2000/svg"
+                    class="h-5 w-5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="4"/>
+                  <path d="M12 2v2"/>
+                  <path d="M12 20v2"/>
+                  <path d="M2 12h2"/>
+                  <path d="M20 12h2"/>
+                  <path d="m4.93 4.93 1.41 1.41"/>
+                  <path d="m17.66 17.66 1.41 1.41"/>
+                  <path d="m6.34 17.66-1.41 1.41"/>
+                  <path d="m19.07 4.93-1.41 1.41"/>
+                </svg>
+              </template>
+
+              <!-- Moon (Dark) -->
+              <template x-if="dark">
+                <svg xmlns="http://www.w3.org/2000/svg"
+                    class="h-5 w-5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round">
+                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                </svg>
+              </template>
+
+            </button>
+
+            <!-- Language switcher -->
+            <div class="h-10 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden flex">
+              <button @click="setLang('vi')" :class="lang==='vi' ? 'bg-slate-200 dark:bg-slate-700' : ''" class="px-3 text-sm">VI</button>
+              <button @click="setLang('en')" :class="lang==='en' ? 'bg-slate-200 dark:bg-slate-700' : ''" class="px-3 text-sm border-l border-slate-200 dark:border-slate-700">EN</button>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="hidden md:flex items-center gap-2 ml-2">
+            <button class="h-10 px-3 rounded-xl bg-brand-600 text-white hover:bg-brand-700" @click="openCreate=true">
+              <span x-text="lang==='vi' ? '+ Tạo tin' : '+ Create'"></span>
+            </button>
+            <button class="h-10 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700" @click="openFilter=true">
+              <span x-text="lang==='vi' ? 'Bộ lọc' : 'Filter'"></span>
+            </button>
+          </div>
+           <!-- Wallet -->
+          <div class="relative hidden md:block ml-2" x-data="{ open:false }">
+            <button @click="open=!open"
+                    class="h-10 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="5" width="20" height="14" rx="2" ry="2"/><path d="M2 10h20"/>
+              </svg>
+              <span class="text-sm font-medium" x-text="formatVND(wallet.balance)"></span>
+            </button>
+            <div x-show="open" @click.outside="open=false" x-transition
+                class="absolute right-0 mt-2 w-64 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-soft p-3">
+              <div class="flex items-center justify-between text-sm mb-2">
+                <span class="text-slate-500" x-text="lang==='vi' ? 'Số dư' : 'Balance'"></span>
+                <span class="font-semibold" x-text="formatVND(wallet.balance)"></span>
+              </div>
+              <button @click="open=false; openTopup=true"
+                      class="w-full h-9 rounded-lg bg-brand-600 text-white hover:bg-brand-700 text-sm">
+                <span x-text="lang==='vi' ? 'Nạp tiền' : 'Top up'"></span>
+              </button>
+              <div class="mt-2 text-xs text-slate-500" x-text="lang==='vi' ? 'Dùng để đăng bài & đẩy tin' : 'Use for posts & boosts'"></div>
+            </div>
+          </div>
+
+          <!-- User dropdown -->
+          <div class="relative ml-2" x-data="{ open:false }">
+            <button @click="open=!open" class="h-10 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center gap-2">
+              <img src="https://i.pravatar.cc/80?img=15" alt="avatar" class="h-7 w-7 rounded-full" />
+              <span class="hidden sm:block text-sm font-medium">Admin</span>
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m6 9 6 6 6-6"/></svg>
+            </button>
+            <div x-show="open" @click.outside="open=false" x-transition class="absolute right-0 mt-2 w-56 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-soft p-2">
+              <a href="#" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-sm">Hồ sơ</a>
+              <a href="#" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-sm">Cài đặt</a>
+              <form method="POST" action="{{ route('logout') }}">
+                <button type="submit" class="w-full text-left px-3 py-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30 text-sm text-red-600 dark:text-red-400">Đăng xuất</button>
+              </form>
+            </div>
+          </div>
+          <!-- Collapse sidebar (desktop) -->
+            <button @click="sidebarCollapsed = !sidebarCollapsed"
+                    :title="sidebarCollapsed ? (lang==='vi'?'Mở rộng':'Expand') : (lang==='vi'?'Thu gọn':'Collapse')"
+                    class="h-10 w-10 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 grid place-content-center">
+              <template x-if="!sidebarCollapsed">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6h18M3 12h12M3 18h18"/></svg>
+              </template>
+              <template x-if="sidebarCollapsed">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h10M4 12h18M4 18h10"/></svg>
+              </template>
+            </button>
+
+        </div>
+      </header>
+
+
+      <!-- Main -->
+      <main class="p-4 md:p-6 space-y-6">
+        <!-- KPIs -->
+        <section class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 shadow-subtle">
+            <div class="text-sm text-slate-500 dark:text-slate-400">Tin đăng hôm nay</div>
+            <div class="mt-2 flex items-end justify-between">
+              <div class="text-3xl font-semibold" x-text="kpi.todayListings"></div>
+              <div class="text-xs px-2 py-1 rounded-lg bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300" x-text="kpi.todayDelta"></div>
+            </div>
+            <div class="mt-3 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+              <div class="h-full bg-brand-600" :style="`width:${kpi.todayRatio}%`"></div>
+            </div>
+          </div>
+          <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 shadow-subtle">
+            <div class="text-sm text-slate-500 dark:text-slate-400">Lượt liên hệ</div>
+            <div class="mt-2 flex items-end justify-between">
+              <div class="text-3xl font-semibold" x-text="kpi.leads"></div>
+              <div class="text-xs px-2 py-1 rounded-lg bg-brand-100 text-brand-700" x-text="kpi.leadsRate"></div>
+            </div>
+            <div class="mt-3 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+              <div class="h-full bg-brand-600" :style="`width:${kpi.leadsRatio}%`"></div>
+            </div>
+          </div>
+          <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 shadow-subtle">
+            <div class="text-sm text-slate-500 dark:text-slate-400">Duyệt chờ</div>
+            <div class="mt-2 flex items-end justify-between">
+              <div class="text-3xl font-semibold" x-text="kpi.pending"></div>
+              <div class="text-xs px-2 py-1 rounded-lg bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">chờ</div>
+            </div>
+            <div class="mt-3 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+              <div class="h-full bg-amber-500" :style="`width:${kpi.pendingRatio}%`"></div>
+            </div>
+          </div>
+          <div class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 shadow-subtle">
+            <div class="text-sm text-slate-500 dark:text-slate-400">Doanh thu (dịch vụ)</div>
+            <div class="mt-2 flex items-end justify-between">
+              <div class="text-3xl font-semibold" x-text="kpi.revenue"></div>
+              <div class="text-xs px-2 py-1 rounded-lg bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300" x-text="kpi.revDelta"></div>
+            </div>
+            <div class="mt-3 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+              <div class="h-full bg-red-500" :style="`width:${kpi.revRatio}%`"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Tabs: Listings / Projects / Blog / Contacts -->
+        <section class="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-subtle">
+          <div class="px-4 pt-4">
+            <div class="inline-flex rounded-xl border border-slate-200 dark:border-slate-800 p-1 bg-slate-50/60 dark:bg-slate-900/40" role="tablist">
+            <template x-for="t in tabs" :key="t.id">
+              <button type="button"
+                      @click="activeTab = t.id"
+                      :aria-selected="activeTab === t.id"
+                      :class="tabClass(t.id)"
+                      class="px-3 py-1.5 rounded-lg text-sm">
+                <span x-text="lang === 'vi' ? t.vi : t.en"></span>
+              </button>
+            </template>
+          </div>
+
+          </div>
+          <!-- USERS table -->
+          <div x-show="activeTab==='users'" class="p-4" x-cloak>
+            <div class="flex items-center gap-2 mb-3">
+              <h2 class="font-semibold text-lg" x-text="lang==='vi' ? 'Người dùng' : 'Users'"></h2>
+              <span class="text-xs ml-2 px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800"
+                    x-text="`${users.length} ${lang==='vi' ? 'tài khoản' : 'users'}`"></span>
+              <div class="ml-auto flex items-center gap-2">
+                <button class="h-9 px-3 rounded-xl bg-brand-600 text-white hover:bg-brand-700 text-sm">
+                  <span x-text="lang==='vi' ? '+ Thêm người dùng' : '+ Add user'"></span>
+                </button>
+              </div>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="min-w-full text-sm">
+                <thead class="text-left text-slate-500 dark:text-slate-400 border-y border-slate-200 dark:border-slate-800">
+                  <tr>
+                    <th class="py-3 px-4">ID</th>
+                    <th class="py-3 px-4" x-text="lang==='vi' ? 'Họ tên' : 'Name'"></th>
+                    <th class="py-3 px-4">Email</th>
+                    <th class="py-3 px-4" x-text="lang==='vi' ? 'Vai trò' : 'Role'"></th>
+                    <th class="py-3 px-4" x-text="lang==='vi' ? 'Trạng thái' : 'Status'"></th>
+                    <th class="py-3 px-4 text-right" x-text="lang==='vi' ? 'Thao tác' : 'Actions'"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <template x-for="u in users" :key="u.id">
+                    <tr class="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50/60 dark:hover:bg-slate-800/60">
+                      <td class="py-3 px-4 font-medium" x-text="u.id"></td>
+                      <td class="py-3 px-4 font-medium" x-text="u.name"></td>
+                      <td class="py-3 px-4" x-text="u.email"></td>
+                      <td class="py-3 px-4">
+                        <span class="px-2 py-0.5 rounded-lg text-xs bg-slate-100 dark:bg-slate-800" x-text="u.role"></span>
+                      </td>
+                      <td class="py-3 px-4">
+                        <span :class="userStatusClass(u.status)" class="px-2 py-0.5 rounded-lg text-xs font-medium" x-text="u.status"></span>
+                      </td>
+                      <td class="py-3 px-4 text-right">
+                        <div class="inline-flex gap-1">
+                          <button class="px-2.5 h-8 grid place-content-center rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700" title="Sửa">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.862 3.487a2.1 2.1 0 0 1 2.97 2.97L8.478 17.81l-4.03.503.503-4.03L16.862 3.487Z"/></svg>
+                          </button>
+                          <button class="px-2.5 h-8 grid place-content-center rounded-lg bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/40" title="Xóa">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0 1 16.138 21H7.862a2 2 0 0 1-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m-7 0a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m-6 0h6"/></svg>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- LISTINGS table -->
+          <div x-show="activeTab==='listings'" class="p-4">
+            <div class="flex items-center gap-2 mb-3">
+              <h2 class="font-semibold text-lg">Tin đăng gần đây</h2>
+              <span class="text-xs ml-2 px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800" x-text="`${listings.length} bản ghi`"></span>
+              <div class="ml-auto flex items-center gap-2">
+                <button class="h-9 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-sm" @click="openFilter=true">Bộ lọc</button>
+                <button class="h-9 px-3 rounded-xl bg-brand-600 text-white hover:bg-brand-700 text-sm" @click="openCreate=true">+ Tạo tin</button>
+              </div>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="min-w-full text-sm">
+                <thead class="text-left text-slate-500 dark:text-slate-400 border-y border-slate-200 dark:border-slate-800">
+                  <tr>
+                    <th class="py-3 px-4">Mã</th>
+                    <th class="py-3 px-4">Tiêu đề</th>
+                    <th class="py-3 px-4">Khu vực</th>
+                    <th class="py-3 px-4">Diện tích</th>
+                    <th class="py-3 px-4">Giá</th>
+                    <th class="py-3 px-4">Trạng thái</th>
+                    <th class="py-3 px-4">Ngày</th>
+                    <th class="py-3 px-4 text-right">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <template x-for="o in listings" :key="o.code">
+                    <tr class="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50/60 dark:hover:bg-slate-800/60">
+                      <td class="py-3 px-4 font-medium" x-text="o.code"></td>
+                      <td class="py-3 px-4">
+                        <div class="font-medium line-clamp-1" x-text="o.title"></div>
+                        <div class="text-xs text-slate-500" x-text="o.type"></div>
+                      </td>
+                      <td class="py-3 px-4" x-text="o.area"></td>
+                      <td class="py-3 px-4" x-text="o.size"></td>
+                      <td class="py-3 px-4" x-text="o.price"></td>
+                      <td class="py-3 px-4"><span :class="statusClass(o.status)" class="px-2 py-0.5 rounded-lg text-xs font-medium" x-text="o.status"></span></td>
+                      <td class="py-3 px-4" x-text="o.date"></td>
+                      <td class="py-3 px-4 text-right">
+                        <div class="inline-flex gap-1">
+                          <a href="#" class="px-2.5 h-8 grid place-content-center rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700" title="Xem">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7Z"/></svg>
+                          </a>
+                          <a href="#" class="px-2.5 h-8 grid place-content-center rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700" title="Sửa">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.862 3.487a2.1 2.1 0 0 1 2.97 2.97L8.478 17.81l-4.03.503.503-4.03L16.862 3.487Z"/></svg>
+                          </a>
+                          <button class="px-2.5 h-8 grid place-content-center rounded-lg bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/40" title="Xóa">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0 1 16.138 21H7.862a2 2 0 0 1-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m-7 0a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m-6 0h6"/></svg>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </div>
+            <!-- Pagination demo -->
+            <div class="p-4 flex items-center justify-between text-sm">
+              <div>Hiển thị <span class="font-medium">1–10</span> trên <span class="font-medium" x-text="listings.length"></span></div>
+              <div class="flex items-center gap-1">
+                <button class="h-9 w-9 rounded-lg bg-slate-100 dark:bg-slate-800 grid place-content-center">‹</button>
+                <button class="h-9 w-9 rounded-lg bg-brand-600 text-white grid place-content-center">1</button>
+                <button class="h-9 w-9 rounded-lg bg-slate-100 dark:bg-slate-800 grid place-content-center">2</button>
+                <button class="h-9 w-9 rounded-lg bg-slate-100 dark:bg-slate-800 grid place-content-center">›</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- PROJECTS grid -->
+          <div x-show="activeTab==='projects'" class="p-4">
+            <div class="flex items-center gap-2 mb-3">
+              <h2 class="font-semibold text-lg">Dự án</h2>
+              <span class="text-xs ml-2 px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800" x-text="`${projects.length} dự án`"></span>
+              <div class="ml-auto flex items-center gap-2">
+                <button class="h-9 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-sm" @click="openProject=true">+ Thêm dự án</button>
+              </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+              <template x-for="p in projects" :key="p.slug">
+                <div class="rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden bg-white dark:bg-slate-900">
+                  <img :src="p.cover" alt="" class="h-40 w-full object-cover">
+                  <div class="p-4">
+                    <div class="font-semibold" x-text="p.name"></div>
+                    <div class="text-sm text-slate-500" x-text="p.location"></div>
+                    <div class="mt-3 flex items-center justify-between">
+                      <span class="text-sm px-2 py-0.5 rounded-lg bg-brand-100 text-brand-700" x-text="p.type"></span>
+                      <button class="text-sm px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">Chi tiết</button>
+                    </div>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </div>
+
+          <!-- BLOG table -->
+          <div x-show="activeTab==='blog'" class="p-4">
+            <div class="flex items-center gap-2 mb-3">
+              <h2 class="font-semibold text-lg">Bài viết</h2>
+              <span class="text-xs ml-2 px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800" x-text="`${posts.length} bài`"></span>
+              <div class="ml-auto flex items-center gap-2">
+                <button class="h-9 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-sm" @click="openPost=true">+ Bài viết</button>
+              </div>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="min-w-full text-sm">
+                <thead class="text-left text-slate-500 dark:text-slate-400 border-y border-slate-200 dark:border-slate-800">
+                  <tr>
+                    <th class="py-3 px-4">Tiêu đề</th>
+                    <th class="py-3 px-4">Chuyên mục</th>
+                    <th class="py-3 px-4">Trạng thái</th>
+                    <th class="py-3 px-4">Ngày</th>
+                    <th class="py-3 px-4 text-right">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <template x-for="b in posts" :key="b.slug">
+                    <tr class="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50/60 dark:hover:bg-slate-800/60">
+                      <td class="py-3 px-4 font-medium line-clamp-1" x-text="b.title"></td>
+                      <td class="py-3 px-4" x-text="b.category"></td>
+                      <td class="py-3 px-4"><span :class="statusClass(b.status)" class="px-2 py-0.5 rounded-lg text-xs font-medium" x-text="b.status"></span></td>
+                      <td class="py-3 px-4" x-text="b.date"></td>
+                      <td class="py-3 px-4 text-right">
+                        <div class="inline-flex gap-1">
+                          <a href="#" class="px-2.5 h-8 grid place-content-center rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700" title="Sửa">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.862 3.487a2.1 2.1 0 0 1 2.97 2.97L8.478 17.81l-4.03.503.503-4.03L16.862 3.487Z"/></svg>
+                          </a>
+                          <button class="px-2.5 h-8 grid place-content-center rounded-lg bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/40" title="Xóa">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0 1 16.138 21H7.862a2 2 0 0 1-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m-7 0a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m-6 0h6"/></svg>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- CONTACTS simple list -->
+          <div x-show="activeTab==='contacts'" class="p-4">
+            <div class="flex items-center gap-2 mb-3">
+              <h2 class="font-semibold text-lg">Liên hệ khách hàng</h2>
+              <span class="text-xs ml-2 px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800" x-text="`${contacts.length} liên hệ`"></span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              <template x-for="c in contacts" :key="c.id">
+                <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+                  <div class="font-semibold" x-text="c.name"></div>
+                  <div class="text-sm text-slate-500" x-text="c.phone"></div>
+                  <div class="text-sm text-slate-500" x-text="c.note"></div>
+                  <div class="mt-3 flex items-center gap-2">
+                    <span class="text-xs px-2 py-0.5 rounded-lg" :class="c.status==='Mới' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'" x-text="c.status"></span>
+                    <button class="ml-auto text-sm px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">Gọi lại</button>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </div>
+        </section>
+
+        <!-- Quick create form (Listing) + Stat card -->
+        <section class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div class="lg:col-span-2 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4">
+            <h3 class="font-semibold">Tạo tin đăng nhanh</h3>
+            <form class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+              <label class="block">
+                <span class="text-sm text-slate-500">Tiêu đề</span>
+                <input class="mt-1 w-full h-10 rounded-xl bg-slate-100/70 dark:bg-slate-800/70 border border-slate-200/70 dark:border-slate-700 px-3 focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="VD: Căn hộ 2PN view sông"/>
+              </label>
+              <label class="block">
+                <span class="text-sm text-slate-500">Loại</span>
+                <select class="mt-1 w-full h-10 rounded-xl bg-slate-100/70 dark:bg-slate-800/70 border border-slate-200/70 dark:border-slate-700 px-3"><option>Bán</option><option>Cho thuê</option></select>
+              </label>
+              <label class="block">
+                <span class="text-sm text-slate-500">Tỉnh/Thành</span>
+                <input class="mt-1 w-full h-10 rounded-xl bg-slate-100/70 dark:bg-slate-800/70 border border-slate-200/70 dark:border-slate-700 px-3" placeholder="TP.HCM"/>
+              </label>
+              <label class="block">
+                <span class="text-sm text-slate-500">Diện tích (m²)</span>
+                <input type="number" class="mt-1 w-full h-10 rounded-xl bg-slate-100/70 dark:bg-slate-800/70 border border-slate-200/70 dark:border-slate-700 px-3" placeholder="68"/>
+              </label>
+              <label class="block">
+                <span class="text-sm text-slate-500">Giá</span>
+                <input class="mt-1 w-full h-10 rounded-xl bg-slate-100/70 dark:bg-slate-800/70 border border-slate-200/70 dark:border-slate-700 px-3" placeholder="3,2 tỷ hoặc 12 triệu/tháng"/>
+              </label>
+              <label class="block">
+                <span class="text-sm text-slate-500">Ảnh cover (URL)</span>
+                <input class="mt-1 w-full h-10 rounded-xl bg-slate-100/70 dark:bg-slate-800/70 border border-slate-200/70 dark:border-slate-700 px-3" placeholder="https://..."/>
+              </label>
+              <label class="block md:col-span-2">
+                <span class="text-sm text-slate-500">Mô tả ngắn</span>
+                <textarea rows="3" class="mt-1 w-full rounded-xl bg-slate-100/70 dark:bg-slate-800/70 border border-slate-200/70 dark:border-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="Điểm nổi bật..."></textarea>
+              </label>
+              <div class="flex items-center gap-3 md:col-span-2">
+                <label class="inline-flex items-center gap-2 text-sm"><input type="checkbox" class="rounded border-slate-300 text-brand-600 focus:ring-brand-500"> Nổi bật</label>
+                <label class="inline-flex items-center gap-2 text-sm"><input type="checkbox" class="rounded border-slate-300 text-brand-600 focus:ring-brand-500"> Hiện trang chủ</label>
+                <div class="ml-auto flex gap-2">
+                  <button type="button" class="h-10 px-4 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700">Hủy</button>
+                  <button type="submit" class="h-10 px-4 rounded-xl bg-brand-600 text-white hover:bg-brand-700">Lưu</button>
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="rounded-2xl bg-gradient-to-b from-brand-500 to-brand-700 text-white p-4">
+            <div class="text-sm/none opacity-90">Tổng tin hiển thị</div>
+            <div class="mt-2 text-4xl font-semibold" x-text="kpi.totalLive"></div>
+            <div class="mt-3 text-sm opacity-90">So với tuần trước <span class="font-semibold" x-text="kpi.totalDelta"></span></div>
+            <div class="mt-4 h-28 rounded-xl bg-white/10"></div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <!-- Drawers / Modals -->
+  <div x-show="openFilter" x-transition.opacity class="fixed inset-0 z-50 bg-black/40"></div>
+  <div x-show="openFilter" x-transition class="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 p-4">
+    <div class="flex items-center justify-between">
+      <h3 class="font-semibold text-lg">Bộ lọc tin đăng</h3>
+      <button @click="openFilter=false" class="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800" aria-label="Đóng">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="mt-4 space-y-3">
+      <label class="block"><span class="text-sm text-slate-500">Trạng thái</span>
+        <select class="mt-1 w-full h-10 rounded-xl bg-slate-100/70 dark:bg-slate-800/70 border border-slate-200/70 dark:border-slate-700 px-3"><option>Tất cả</option><option>Đang hiển thị</option><option>Nháp</option><option>Ẩn</option></select>
+      </label>
+      <label class="block"><span class="text-sm text-slate-500">Loại tin</span>
+        <select class="mt-1 w-full h-10 rounded-xl bg-slate-100/70 dark:bg-slate-800/70 border border-slate-200/70 dark:border-slate-700 px-3"><option>Tất cả</option><option>Bán</option><option>Cho thuê</option></select>
+      </label>
+      <label class="block"><span class="text-sm text-slate-500">Khoảng giá</span>
+        <input class="mt-1 w-full h-10 rounded-xl bg-slate-100/70 dark:bg-slate-800/70 border border-slate-200/70 dark:border-slate-700 px-3" placeholder="VD: 2–5 tỷ / 8–15 triệu"/>
+      </label>
+      <div class="pt-2 flex gap-2">
+        <button @click="openFilter=false" class="h-10 px-4 rounded-xl bg-slate-100 dark:bg-slate-800">Đóng</button>
+        <button class="h-10 px-4 rounded-xl bg-brand-600 text-white">Áp dụng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create Listing Modal -->
+  <div x-show="openCreate" x-transition.opacity class="fixed inset-0 z-50 bg-black/40"></div>
+  <div x-show="openCreate" x-transition class="fixed inset-0 z-50 grid place-content-center p-4">
+    <div class="w-full max-w-2xl rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4">
+      <div class="flex items-center justify-between">
+        <h3 class="font-semibold text-lg">Tạo tin mới</h3>
+        <button @click="openCreate=false" class="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800" aria-label="Đóng">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+        <input class="h-10 rounded-xl bg-slate-100/70 dark:bg-slate-800/70 border border-slate-200/70 dark:border-slate-700 px-3" placeholder="Tiêu đề">
+        <select class="h-10 rounded-xl bg-slate-100/70 dark:bg-slate-800/70 border border-slate-200/70 dark:border-slate-700 px-3"><option>Bán</option><option>Cho thuê</option></select>
+        <input class="h-10 rounded-xl bg-slate-100/70 dark:bg-slate-800/70 border border-slate-200/70 dark:border-slate-700 px-3" placeholder="Khu vực (VD: Cầu Giấy, Hà Nội)">
+        <input class="h-10 rounded-xl bg-slate-100/70 dark:bg-slate-800/70 border border-slate-200/70 dark:border-slate-700 px-3" placeholder="Diện tích (m²)">
+        <input class="h-10 rounded-xl bg-slate-100/70 dark:bg-slate-800/70 border border-slate-200/70 dark:border-slate-700 px-3" placeholder="Giá">
+        <input class="h-10 rounded-xl bg-slate-100/70 dark:bg-slate-800/70 border border-slate-200/70 dark:border-slate-700 px-3" placeholder="Ảnh cover (URL)">
+        <textarea class="md:col-span-2 rounded-xl bg-slate-100/70 dark:bg-slate-800/70 border border-slate-200/70 dark:border-slate-700 px-3 py-2" rows="3" placeholder="Mô tả ngắn..."></textarea>
+        <div class="md:col-span-2 flex items-center gap-3">
+          <label class="inline-flex items-center gap-2 text-sm"><input type="checkbox" class="rounded border-slate-300 text-brand-600 focus:ring-brand-500"> Đánh dấu nổi bật</label>
+          <label class="inline-flex items-center gap-2 text-sm"><input type="checkbox" class="rounded border-slate-300 text-brand-600 focus:ring-brand-500"> Hiển thị</label>
+          <div class="ml-auto flex gap-2">
+            <button type="button" @click="openCreate=false" class="h-10 px-4 rounded-xl bg-slate-100 dark:bg-slate-800">Hủy</button>
+            <button type="submit" class="h-10 px-4 rounded-xl bg-brand-600 text-white">Lưu</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Create Project Modal -->
+  <div x-show="openProject" x-transition.opacity class="fixed inset-0 z-50 bg-black/40"></div>
+  <div x-show="openProject" x-transition class="fixed inset-0 z-50 grid place-content-center p-4">
+    <div class="w-full max-w-xl rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4">
+      <div class="flex items-center justify-between">
+        <h3 class="font-semibold text-lg">Thêm dự án</h3>
+        <button @click="openProject=false" class="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800" aria-label="Đóng">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form class="mt-3 grid grid-cols-1 gap-3">
+        <input class="h-10 rounded-xl bg-slate-100/70 dark:bg-slate-800/70 border border-slate-200/70 dark:border-slate-700 px-3" placeholder="Tên dự án">
+        <input class="h-10 rounded-xl bg-slate-100/70 dark:bg-slate-800/70 border border-slate-200/70 dark:border-slate-700 px-3" placeholder="Địa điểm">
+        <select class="h-10 rounded-xl bg-slate-100/70 dark:bg-slate-800/70 border border-slate-200/70 dark:border-slate-700 px-3"><option>Căn hộ</option><option>Nhà phố</option><option>Đô thị</option></select>
+        <input class="h-10 rounded-xl bg-slate-100/70 dark:bg-slate-800/70 border border-slate-200/70 dark:border-slate-700 px-3" placeholder="Ảnh cover (URL)">
+        <div class="flex items-center justify-end gap-2"><button type="button" @click="openProject=false" class="h-10 px-4 rounded-xl bg-slate-100 dark:bg-slate-800">Hủy</button><button type="submit" class="h-10 px-4 rounded-xl bg-brand-600 text-white">Lưu</button></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Create Post Modal -->
+  <div x-show="openPost" x-transition.opacity class="fixed inset-0 z-50 bg-black/40"></div>
+  <div x-show="openPost" x-transition class="fixed inset-0 z-50 grid place-content-center p-4">
+    <div class="w-full max-w-xl rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4">
+      <div class="flex items-center justify-between">
+        <h3 class="font-semibold text-lg">Bài viết mới</h3>
+        <button @click="openPost=false" class="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800" aria-label="Đóng">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form class="mt-3 grid grid-cols-1 gap-3">
+        <input class="h-10 rounded-xl bg-slate-100/70 dark:bg-slate-800/70 border border-slate-200/70 dark:border-slate-700 px-3" placeholder="Tiêu đề">
+        <input class="h-10 rounded-xl bg-slate-100/70 dark:bg-slate-800/70 border border-slate-200/70 dark:border-slate-700 px-3" placeholder="Chuyên mục">
+        <textarea class="rounded-xl bg-slate-100/70 dark:bg-slate-800/70 border border-slate-200/70 dark:border-slate-700 px-3 py-2" rows="4" placeholder="Tóm tắt..."></textarea>
+        <div class="flex items-center justify-end gap-2"><button type="button" @click="openPost=false" class="h-10 px-4 rounded-xl bg-slate-100 dark:bg-slate-800">Hủy</button><button type="submit" class="h-10 px-4 rounded-xl bg-brand-600 text-white">Lưu</button></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <template x-if="toast">
+    <div class="fixed bottom-4 right-4 z-50 px-4 py-3 rounded-xl bg-slate-900 text-white shadow-soft"><div class="text-sm" x-text="toast"></div></div>
+  </template>
+
+  <!-- Alpine State -->
+  <script>
+    function adminApp(){
+      return {
+        sidebarOpen: false,
+        sidebarCollapsed: false,
+        openFilter: false,
+        openCreate: false,
+        openProject: false,
+        openPost: false,
+        openTopup: false,
+        wallet: {
+          balance: 350000,
+          amount: 100000,
+          amountCustom: null,
+          method: 'bank',
+          presets: [100000, 200000, 500000, 1000000],
+          methods: [
+            { key: 'bank',    vi: 'Chuyển khoản', en: 'Bank' },
+            { key: 'momo',    vi: 'MoMo',         en: 'MoMo' },
+            { key: 'zalopay', vi: 'ZaloPay',      en: 'ZaloPay' },
+          ]
+        },
+        lang: 'vi',
+        dark: false,
+        toast: '',
+        pageTitle: 'Dashboard',
+        activeTab: 'listings',
+        tabs: [
+          { id: 'users', vi: 'Người dùng', en: 'Users' },
+          { id: 'listings', vi: 'Tin đăng', en: 'Listings' },
+          { id: 'projects', vi: 'Dự án', en: 'Projects' },
+          { id: 'blog', vi: 'Bài viết', en: 'Posts' },
+          { id: 'contacts', vi: 'Liên hệ', en: 'Contacts' },
+        ],
+        nav: [
+          { vi: 'Dashboard', en: 'Dashboard', href: '#', current: true, badge: '', icon: '<svg xmlns=\'http://www.w3.org/2000/svg\' class=\'h-5 w-5\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M3 12l2-2m0 0 7-7 7 7M5 10v10a1 1 0 0 0 1 1h3m10-11 2 2m-2-2v10a1 1 0 0 1-1 1h-3m-6 0h6\'/></svg>' },
+          { vi: 'Người dùng', en: 'Users', href: '#users', badge: '', icon:
+            '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M23 21v-2a4 4 0 0 0-3-3.87"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>'
+          },
+          { vi: 'Tin đăng', en: 'Listings', href: '#listings', badge: '12', icon: '<svg xmlns=\'http://www.w3.org/2000/svg\' class=\'h-5 w-5\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M3 7h18M5 7v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7\'/></svg>' },
+          { vi: 'Dự án', en: 'Projects', href: '#projects', badge: '', icon: '<svg xmlns=\'http://www.w3.org/2000/svg\' class=\'h-5 w-5\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M20 13V7a2 2 0 0 0-2-2h-3l-2-2-2 2H6a2 2 0 0 0-2 2v6m16 0v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4m16 0H4\'/></svg>' },
+          { vi: 'Bài viết', en: 'Posts', href: '#blog', badge: '', icon: '<svg xmlns=\'http://www.w3.org/2000/svg\' class=\'h-5 w-5\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M4 4h16v16H4zM8 4v16M4 8h16\'/></svg>' },
+          { vi: 'Liên hệ', en: 'Contacts', href: '#contacts', badge: '5', icon: '<svg xmlns=\'http://www.w3.org/2000/svg\' class=\'h-5 w-5\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><rect x=\'3\' y=\'5\' width=\'18\' height=\'14\' rx=\'2\' ry=\'2\'/><path d=\'M3 7l9 6 9-6\'/></svg>' },
+          { vi: 'Cấu hình', en: 'Settings', href: '#settings', badge: '', icon: '<svg xmlns=\'http://www.w3.org/2000/svg\' class=\'h-5 w-5\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756.427 1.756 2.925 0 3.351a1.724 1.724 0 0 0-1.065 2.572c.94 1.543-.827 3.31-2.37 2.37a1.724 1.724 0 0 0-2.572 1.065c-.427 1.756-2.925 1.756-3.351 0a1.724 1.724 0 0 0-2.572-1.065c-1.543.94-3.31-.827-2.37-2.37a1.724 1.724 0 0 0-1.065-2.572c-1.756-.427-1.756-2.925 0-3.351.94-1.543-.827-3.31 2.37-2.37 1.066-.659 2.146-.323 2.573-1.066Z\'/><circle cx=\'12\' cy=\'12\' r=\'3\'/></svg>' }
+        ],
+        kpi: { todayListings: 18, todayRatio: 66, todayDelta: '+12.4%', leads: 43, leadsRatio: 58, leadsRate: '+6.1%', pending: 7, pendingRatio: 35, revenue: '₫23.5M', revDelta: '-3.1%', revRatio: 40, totalLive: 324, totalDelta: '+8.7%' },
+        users: [
+          { id: 1, name: 'Nguyễn Admin', email: 'admin@example.com', role: 'Admin',          status: 'Hoạt động' },
+          { id: 2, name: 'Trần Cộng tác', email: 'ctv@example.com',   role: 'Cộng tác viên', status: 'Khoá' }
+        ],
+        listings: [
+          { code: 'TD-0001', title: 'Nhà phố 2 tầng, nội thất cao cấp', type: 'Bán', area: 'Cầu Giấy, Hà Nội', size: '80 m²', price: '5,2 tỷ', status: 'Đang hiển thị', date: '05/09/2025' },
+          { code: 'TD-0002', title: 'Căn hộ 2PN view hồ, full nội thất', type: 'Cho thuê', area: 'Quận 7, TP.HCM', size: '65 m²', price: '12 triệu/tháng', status: 'Nháp', date: '05/09/2025' },
+          { code: 'TD-0003', title: 'Biệt thự mini sân vườn', type: 'Bán', area: 'TP. Thủ Đức', size: '120 m²', price: '12,8 tỷ', status: 'Đang hiển thị', date: '04/09/2025' },
+          { code: 'TD-0004', title: 'Studio nội thất Bắc Âu, ban công', type: 'Cho thuê', area: 'Cầu Giấy, Hà Nội', size: '40 m²', price: '7 triệu/tháng', status: 'Ẩn', date: '04/09/2025' }
+        ],
+        projects: [
+          { slug: 'emerald', name: 'The Emerald Residence', location: 'Quận 9, TP.HCM', type: 'Căn hộ', cover: 'https://images.unsplash.com/photo-1523217582562-09d0def993a6?q=80&w=1400&auto=format&fit=crop' },
+          { slug: 'riverside', name: 'Riverside Park', location: 'Hà Nội', type: 'Đô thị xanh', cover: 'https://images.unsplash.com/photo-1523217582562-09d0def993a6?q=80&w=1400&auto=format&fit=crop' },
+          { slug: 'sunlake', name: 'Sunlake City', location: 'Đà Nẵng', type: 'Đô thị ven hồ', cover: 'https://images.unsplash.com/photo-1523217582562-09d0def993a6?q=80&w=1400&auto=format&fit=crop' }
+        ],
+        posts: [
+          { slug: 'vay-mua-nha', title: 'Hướng dẫn vay mua nhà lần đầu', category: 'Tư vấn', status: 'Đang hiển thị', date: '03/09/2025' },
+          { slug: 'xem-nha-mau', title: '5 lưu ý vàng khi xem nhà mẫu', category: 'Kinh nghiệm', status: 'Nháp', date: '02/09/2025' }
+        ],
+        contacts: [
+          { id: 1, name: 'Nguyễn A', phone: '0901 234 567', note: 'Quan tâm căn 2PN', status: 'Mới' },
+          { id: 2, name: 'Trần B', phone: '0933 888 111', note: 'Hỏi thuê studio', status: 'Đã gọi' }
+        ],
+        init(){
+          const bal = localStorage.getItem('bds_wallet_balance');
+          if (bal) this.wallet.balance = Number(bal);
+
+          const savedDark = localStorage.getItem('bds_dark');
+          this.dark = savedDark ? JSON.parse(savedDark) : window.matchMedia('(prefers-color-scheme: dark)').matches;
+          const savedLang = localStorage.getItem('bds_lang');
+          this.lang = savedLang || 'vi';
+        },
+        formatVND(n){ if(n==null) return '₫0'; const v = Number.isFinite(n) ? n : Number(n||0); return v.toLocaleString('vi-VN',{ style:'currency', currency:'VND', maximumFractionDigits:0 }); },
+        doTopup(){
+          const amt = this.wallet.amountCustom ? Number(this.wallet.amountCustom) : Number(this.wallet.amount);
+          if(!amt || amt < 10000){
+            this.toast = this.lang==='vi' ? 'Số tiền tối thiểu 10.000đ' : 'Minimum 10,000 VND';
+            setTimeout(()=>this.toast='',2500); return;
+          }
+          this.wallet.balance += amt;
+          localStorage.setItem('bds_wallet_balance', this.wallet.balance);
+          this.wallet.amountCustom = null;
+          this.toast = (this.lang==='vi' ? 'Nạp thành công ' : 'Top-up successful ') + this.formatVND(amt);
+          this.openTopup = false;
+          setTimeout(()=>this.toast='',2500);
+        },
+
+        toggleDark(){ this.dark = !this.dark; localStorage.setItem('bds_dark', JSON.stringify(this.dark)); },
+        setLang(l){ this.lang = l; localStorage.setItem('bds_lang', this.lang); },
+        userStatusClass(s){
+          return s === 'Hoạt động'
+            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
+            : 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300';
+        },
+        statusClass(s){
+          return {
+            'Đang hiển thị': 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
+            'Nháp': 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+            'Ẩn': 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+          }[s] || 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+        },
+        navClass(item){
+          return (item.current ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-50' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300');
+        },
+        tabClass(id){
+          return this.activeTab===id ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-50 shadow-subtle' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-50';
+        }
+      }
+    }
+  </script>
+</body>
+</html>
